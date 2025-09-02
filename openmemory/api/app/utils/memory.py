@@ -140,24 +140,30 @@ def get_default_memory_config():
             "provider": "qdrant",
             "config": {
                 "collection_name": "openmemory",
-                "host": "mem0_store",
+                "host": "localhost",
                 "port": 6333,
+                "embedding_model_dims": 1024
             }
         },
         "llm": {
-            "provider": "openai",
+            "provider": "lmstudio",
             "config": {
-                "model": "gpt-4o-mini",
-                "temperature": 0.1,
-                "max_tokens": 2000,
-                "api_key": "env:OPENAI_API_KEY"
+                "model": "qwen/qwen3-4b-thinking-2507",
+                "lmstudio_base_url": "http://host.docker.internal:1234/v1",
+                "lmstudio_response_format": {
+                    "type": "json_schema",
+                    "json_schema": {
+                        "type": "object",
+                        "schema": {}
+                    }
+                }
             }
         },
         "embedder": {
-            "provider": "openai",
+            "provider": "lmstudio",
             "config": {
-                "model": "text-embedding-3-small",
-                "api_key": "env:OPENAI_API_KEY"
+                "model": "Qwen/Qwen3-Embedding-0.6B-GGUF",
+                "lmstudio_base_url": "http://host.docker.internal:1234/v1"
             }
         },
         "version": "v1.1"

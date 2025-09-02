@@ -1,19 +1,33 @@
 {
     "mem0": {
-        "llm": {
-            "provider": "openai",
+        "vector_store": {
+            "provider": "qdrant",
             "config": {
-                "model": "gpt-4o-mini",
-                "temperature": 0.1,
-                "max_tokens": 2000,
-                "api_key": "env:API_KEY"
+                "collection_name": "openmemory",
+                "host": "mem0_store",
+                "port": 6333,
+                "embedding_model_dims": 1024
+            }
+        },
+        "llm": {
+            "provider": "lmstudio",
+            "config": {
+                "model": "qwen/qwen3-4b-thinking-2507",
+                "lmstudio_base_url": "http://host.docker.internal:1234/v1",
+                "lmstudio_response_format": {
+                    "type": "json_schema",
+                    "json_schema": {
+                        "type": "object",
+                        "schema": {}
+                    }
+                }
             }
         },
         "embedder": {
-            "provider": "openai",
+            "provider": "lmstudio",
             "config": {
-                "model": "text-embedding-3-small",
-                "api_key": "env:API_KEY"
+                "model": "Qwen/Qwen3-Embedding-0.6B-GGUF",
+                "lmstudio_base_url": "http://host.docker.internal:1234/v1"
             }
         }
     }
