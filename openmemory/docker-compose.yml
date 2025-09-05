@@ -16,7 +16,6 @@ services:
 #    volumes:
 #      - memgraph_data:/var/lib/memgraph
   openmemory-mcp:
-    image: mem0/openmemory-mcp
     build: api/
     environment:
       - USER
@@ -36,7 +35,6 @@ services:
     build:
       context: ui/
       dockerfile: Dockerfile
-    image: mem0/openmemory-ui:latest
     ports:
       - "3000:3000"
     environment:
