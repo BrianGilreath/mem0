@@ -321,6 +321,14 @@ def get_memory_client(custom_instructions: str = None):
         # Start with default configuration
         config = get_default_memory_config()
 
+        # Load configuration from config.json file if it exists
+        file_config = _load_config_from_file()
+        if file_config:
+            # Override defaults with file configuration
+            for key in ["llm", "embedder", "vector_store", "graph_store"]:
+                if key in file_config and file_config[key] is not None:
+                    config[key] = file_config[key]
+
         # Variable to track custom instructions
         db_custom_instructions = None
 
@@ -359,16 +367,7 @@ def get_memory_client(custom_instructions: str = None):
                     if "vector_store" in mem0_config and mem0_config["vector_store"] is not None:
                         config["vector_store"] = mem0_config["vector_store"]
             else:
-                print("No configuration found in database, trying config.json file")
-                # Load configuration from config.json file if no database config exists
-                file_config = _load_config_from_file()
-                if file_config:
-                    # Override defaults with file configuration
-                    for key in ["llm", "embedder", "vector_store", "graph_store"]:
-                        if key in file_config and file_config[key] is not None:
-                            config[key] = file_config[key]
-                else:
-                    print("No config.json file found, using defaults")
+                print("No configuration found in database.")
 
             db.close()
 
