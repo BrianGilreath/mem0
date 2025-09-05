@@ -4,7 +4,7 @@
       "provider": "qdrant",
       "config": {
         "collection_name": "openmemory",
-        "host": "mem0_store",
+        "host": "localhost",
         "port": 6333,
         "embedding_model_dims": 1024
       }
@@ -13,7 +13,7 @@
       "provider": "lmstudio",
       "config": {
         "model": "openai/gpt-oss-20b",
-        "lmstudio_base_url": "http://10.0.1.24:1234/v1",
+        "lmstudio_base_url": "http://localhost:1234/v1",
         "lmstudio_response_format": {
           "type": "json_schema",
           "json_schema": {
@@ -27,7 +27,7 @@
       "provider": "lmstudio",
       "config": {
         "model": "Qwen/Qwen3-Embedding-0.6B-GGUF",
-        "lmstudio_base_url": "http://10.0.1.24:1234/v1",
+        "lmstudio_base_url": "http://localhost:1234/v1",
         "embedding_dims": 1024
       }
     }

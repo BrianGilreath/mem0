@@ -1,0 +1,38 @@
+{
+    "mem0": {
+        "vector_store": {
+            "provider": "qdrant",
+            "config": {
+                "collection_name": "openmemory",
+                "host": "mem0_store",
+                "port": 6333,
+                "embedding_model_dims": 1536
+            }
+        },
+        "graph_store": {
+          "provider": "memgraph",
+          "config": {
+            "url": "bolt://mem_graph:7687",
+            "username": "memgraph",
+            "password": "memgraph"
+          }
+        },
+        "llm": {
+            "provider": "openai",
+            "config": {
+                "model": "gpt-4o-mini",
+                "temperature": 0.1,
+                "max_tokens": 2000,
+                "api_key": "env:OPENAI_API_KEY"
+            }
+        },
+        "embedder": {
+            "provider": "openai",
+            "config": {
+                "model": "text-embedding-3-small",
+                "api_key": "env:OPENAI_API_KEY",
+                "embedding_dims": 1536
+            }
+        }
+    }
+}

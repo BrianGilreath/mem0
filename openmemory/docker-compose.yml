@@ -5,6 +5,16 @@ services:
       - "6333:6333"
     volumes:
       - mem0_storage:/mem0/storage
+#  mem_graph: # Graph isn't really ready. Ignore for now.
+#    image: memgraph/memgraph-mage:latest
+#    ports:
+#      - "7687:7687"
+#    environment:
+#      - MEMGRAPH_USER=memgraph
+#      - MEMGRAPH_PASSWORD=memgraph
+#    command: --schema-info-enabled=True
+#    volumes:
+#      - memgraph_data:/var/lib/memgraph
   openmemory-mcp:
     image: mem0/openmemory-mcp
     build: api/
@@ -19,8 +29,9 @@ services:
       - "8765:8765"
     volumes:
       - ./api:/usr/src/openmemory
+      - ../../mem0:/usr/src/mem0ai # We have custom changes!
     command: >
-      sh -c "uvicorn main:app --host 0.0.0.0 --port 8765 --reload --workers 4"
+      sh -c "pip install -e /usr/src/mem0ai && uvicorn main:app --host 0.0.0.0 --port 8765 --reload --workers 4"
   openmemory-ui:
     build:
       context: ui/
@@ -34,3 +45,4 @@ services:
 
 volumes:
   mem0_storage:
+  memgraph_data:

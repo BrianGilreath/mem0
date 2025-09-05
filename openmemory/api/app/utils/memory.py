@@ -57,17 +57,17 @@ def _get_docker_host_url():
     if custom_host:
         print(f"Using custom Ollama host from OLLAMA_HOST: {custom_host}")
         return custom_host.replace('http://', '').replace('https://', '').split(':')[0]
-    
+
     # Check if we're running inside Docker
     if not os.path.exists('/.dockerenv'):
         # Not in Docker, return localhost as-is
         return "localhost"
-    
+
     print("Detected Docker environment, adjusting host URL for Ollama...")
-    
+
     # Try different host resolution strategies
     host_candidates = []
-    
+
     # 1. host.docker.internal (works on Docker Desktop for Mac/Windows)
     try:
         socket.gethostbyname('host.docker.internal')
@@ -75,7 +75,7 @@ def _get_docker_host_url():
         print("Found host.docker.internal")
     except socket.gaierror:
         pass
-    
+
     # 2. Docker bridge gateway (typically 172.17.0.1 on Linux)
     try:
         with open('/proc/net/route', 'r') as f:
@@ -89,12 +89,12 @@ def _get_docker_host_url():
                     break
     except (FileNotFoundError, IndexError, ValueError):
         pass
-    
+
     # 3. Fallback to common Docker bridge IP
     if not host_candidates:
         host_candidates.append('172.17.0.1')
         print("Using fallback Docker bridge IP: 172.17.0.1")
-    
+
     # Return the first available candidate
     return host_candidates[0]
 
@@ -107,9 +107,9 @@ def _fix_ollama_urls(config_section):
     """
     if not config_section or "config" not in config_section:
         return config_section
-    
+
     ollama_config = config_section["config"]
-    
+
     # Set default ollama_base_url if not provided
     if "ollama_base_url" not in ollama_config:
         ollama_config["ollama_base_url"] = "http://host.docker.internal:11434"
@@ -122,7 +122,7 @@ def _fix_ollama_urls(config_section):
                 new_url = url.replace("localhost", docker_host).replace("127.0.0.1", docker_host)
                 ollama_config["ollama_base_url"] = new_url
                 print(f"Adjusted Ollama URL from {url} to {new_url}")
-    
+
     return config_section
 
 
@@ -140,7 +140,7 @@ def get_default_memory_config():
         "collection_name": "openmemory",
         "host": "mem0_store",
     }
-    
+
     # Check for different vector store configurations based on environment variables
     if os.environ.get('CHROMA_HOST') and os.environ.get('CHROMA_PORT'):
         vector_store_provider = "chroma"
@@ -154,7 +154,8 @@ def get_default_memory_config():
             "host": os.environ.get('QDRANT_HOST'),
             "port": int(os.environ.get('QDRANT_PORT'))
         })
-    elif os.environ.get('WEAVIATE_CLUSTER_URL') or (os.environ.get('WEAVIATE_HOST') and os.environ.get('WEAVIATE_PORT')):
+    elif os.environ.get('WEAVIATE_CLUSTER_URL') or (
+            os.environ.get('WEAVIATE_HOST') and os.environ.get('WEAVIATE_PORT')):
         vector_store_provider = "weaviate"
         # Prefer an explicit cluster URL if provided; otherwise build from host/port
         cluster_url = os.environ.get('WEAVIATE_CLUSTER_URL')
@@ -187,7 +188,7 @@ def get_default_memory_config():
         milvus_host = os.environ.get('MILVUS_HOST')
         milvus_port = int(os.environ.get('MILVUS_PORT'))
         milvus_url = f"http://{milvus_host}:{milvus_port}"
-        
+
         vector_store_config = {
             "collection_name": "openmemory",
             "url": milvus_url,
@@ -203,7 +204,7 @@ def get_default_memory_config():
         elasticsearch_port = int(os.environ.get('ELASTICSEARCH_PORT'))
         # Use http:// scheme since we're not using SSL
         full_host = f"http://{elasticsearch_host}"
-        
+
         vector_store_config.update({
             "host": full_host,
             "port": elasticsearch_port,
@@ -233,9 +234,9 @@ def get_default_memory_config():
         vector_store_config.update({
             "port": 6333,
         })
-    
+
     print(f"Auto-detected vector store: {vector_store_provider} with config: {vector_store_config}")
-    
+
     return {
         "vector_store": {
             "provider": vector_store_provider,
@@ -259,6 +260,21 @@ def get_default_memory_config():
         },
         "version": "v1.1"
     }
+
+
+def _load_config_from_file():
+    """Load configuration from config.json file if it exists."""
+    config_file_path = os.path.join(os.path.dirname(__file__), '..', '..', 'config.json')
+    if os.path.exists(config_file_path):
+        try:
+            with open(config_file_path, 'r') as f:
+                file_config = json.load(f)
+                if "mem0" in file_config:
+                    print(f"Loaded configuration from {config_file_path}")
+                    return file_config["mem0"]
+        except Exception as e:
+            print(f"Warning: Error loading config.json: {e}")
+    return None
 
 
 def _parse_environment_variables(config_dict):
@@ -304,38 +320,38 @@ def get_memory_client(custom_instructions: str = None):
     try:
         # Start with default configuration
         config = get_default_memory_config()
-        
+
         # Variable to track custom instructions
         db_custom_instructions = None
-        
+
         # Load configuration from database
         try:
             db = SessionLocal()
             db_config = db.query(ConfigModel).filter(ConfigModel.key == "main").first()
-            
+
             if db_config:
                 json_config = db_config.value
-                
+
                 # Extract custom instructions from openmemory settings
                 if "openmemory" in json_config and "custom_instructions" in json_config["openmemory"]:
                     db_custom_instructions = json_config["openmemory"]["custom_instructions"]
-                
+
                 # Override defaults with configurations from the database
                 if "mem0" in json_config:
                     mem0_config = json_config["mem0"]
-                    
+
                     # Update LLM configuration if available
                     if "llm" in mem0_config and mem0_config["llm"] is not None:
                         config["llm"] = mem0_config["llm"]
-                        
+
                         # Fix Ollama URLs for Docker if needed
                         if config["llm"].get("provider") == "ollama":
                             config["llm"] = _fix_ollama_urls(config["llm"])
-                    
+
                     # Update Embedder configuration if available
                     if "embedder" in mem0_config and mem0_config["embedder"] is not None:
                         config["embedder"] = mem0_config["embedder"]
-                        
+
                         # Fix Ollama URLs for Docker if needed
                         if config["embedder"].get("provider") == "ollama":
                             config["embedder"] = _fix_ollama_urls(config["embedder"])
@@ -343,10 +359,19 @@ def get_memory_client(custom_instructions: str = None):
                     if "vector_store" in mem0_config and mem0_config["vector_store"] is not None:
                         config["vector_store"] = mem0_config["vector_store"]
             else:
-                print("No configuration found in database, using defaults")
-                    
+                print("No configuration found in database, trying config.json file")
+                # Load configuration from config.json file if no database config exists
+                file_config = _load_config_from_file()
+                if file_config:
+                    # Override defaults with file configuration
+                    for key in ["llm", "embedder", "vector_store", "graph_store"]:
+                        if key in file_config and file_config[key] is not None:
+                            config[key] = file_config[key]
+                else:
+                    print("No config.json file found, using defaults")
+
             db.close()
-                            
+
         except Exception as e:
             print(f"Warning: Error loading configuration from database: {e}")
             print("Using default configuration")
@@ -364,10 +389,11 @@ def get_memory_client(custom_instructions: str = None):
 
         # Check if config has changed by comparing hashes
         current_config_hash = _get_config_hash(config)
-        
+
         # Only reinitialize if config changed or client doesn't exist
         if _memory_client is None or _config_hash != current_config_hash:
             print(f"Initializing memory client with config hash: {current_config_hash}")
+            print(f"Config: {config}")
             try:
                 _memory_client = Memory.from_config(config_dict=config)
                 _config_hash = current_config_hash
@@ -378,9 +404,9 @@ def get_memory_client(custom_instructions: str = None):
                 _memory_client = None
                 _config_hash = None
                 return None
-        
+
         return _memory_client
-        
+
     except Exception as e:
         print(f"Warning: Exception occurred while initializing memory client: {e}")
         print("Server will continue running with limited memory functionality")
