@@ -17,9 +17,10 @@ services:
 #      - memgraph_data:/var/lib/memgraph
   openmemory-mcp:
     build: api/
-    environment:
-      - USER
-      - API_KEY
+    # Use one of these methods to provide your USER and API_KEY (if needed)
+    # environment:
+      # - USER
+      # - API_KEY
     env_file:
       - api/.env
     depends_on:
