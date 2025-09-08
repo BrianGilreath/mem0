@@ -374,15 +374,9 @@ def get_memory_client(custom_instructions: str = None):
                     if "llm" in mem0_config and mem0_config["llm"] is not None:
                         config["llm"] = mem0_config["llm"]
 
-                        # Fix localhost URLs for Docker if needed
-                        config["llm"] = _fix_localhost_urls(config["llm"])
-
                     # Update Embedder configuration if available
                     if "embedder" in mem0_config and mem0_config["embedder"] is not None:
                         config["embedder"] = mem0_config["embedder"]
-
-                        # Fix localhost URLs for Docker if needed
-                        config["embedder"] = _fix_localhost_urls(config["embedder"])
 
                     if "vector_store" in mem0_config and mem0_config["vector_store"] is not None:
                         config["vector_store"] = mem0_config["vector_store"]
@@ -405,6 +399,10 @@ def get_memory_client(custom_instructions: str = None):
         # This ensures that even default config values like "env:OPENAI_API_KEY" get parsed
         print("Parsing environment variables in final config...")
         config = _parse_environment_variables(config)
+
+        # Fix localhost URLs for Docker if needed
+        config["llm"] = _fix_localhost_urls(config["llm"])
+        config["embedder"] = _fix_localhost_urls(config["embedder"])
 
         # Check if config has changed by comparing hashes
         current_config_hash = _get_config_hash(config)

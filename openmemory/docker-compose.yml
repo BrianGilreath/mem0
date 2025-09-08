@@ -18,11 +18,11 @@ services:
   openmemory-mcp:
     build: api/
     # Use one of these methods to provide your USER and API_KEY (if needed)
-    # environment:
-      # - USER
-      # - API_KEY
-    env_file:
-      - api/.env
+    environment:
+       - USER
+       - API_KEY
+#    env_file:
+#      - api/.env
     depends_on:
       - mem0_store
     ports:
@@ -40,7 +40,7 @@ services:
       - "3000:3000"
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8765
-      - NEXT_PUBLIC_USER_ID=BrianGilreath
+      - NEXT_PUBLIC_USER_ID=${USER}
 
 volumes:
   mem0_storage:

@@ -9,8 +9,8 @@
               <option name="value" value="http://localhost:8765" />
             </DockerEnvVarImpl>
             <DockerEnvVarImpl>
-              <option name="name" value="NEXT_PUBLIC_USER_ID" />
-              <option name="value" value="brigilre" />
+              <option name="name" value="USER" />
+              <option name="value" value="BrianGilreath" />
             </DockerEnvVarImpl>
           </list>
         </option>
