@@ -4,10 +4,10 @@ Memory client utilities for OpenMemory.
 This module provides functionality to initialize and manage the Mem0 memory client
 with automatic configuration management and Docker environment support.
 
-Docker Ollama Configuration:
-When running inside a Docker container and using Ollama as the LLM or embedder provider,
+Docker Localhost URL Configuration:
+When running inside a Docker container and using Ollama or LM Studio as the LLM or embedder provider,
 the system automatically detects the Docker environment and adjusts localhost URLs
-to properly reach the host machine where Ollama is running.
+to properly reach the host machine where these services are running.
 
 Supported Docker host resolution (in order of preference):
 1. OLLAMA_HOST environment variable (if set)
@@ -15,13 +15,23 @@ Supported Docker host resolution (in order of preference):
 3. Docker bridge gateway IP (typically 172.17.0.1 on Linux)
 4. Fallback to 172.17.0.1
 
-Example configuration that will be automatically adjusted:
+Example configurations that will be automatically adjusted:
 {
     "llm": {
         "provider": "ollama",
         "config": {
             "model": "llama3.1:latest",
             "ollama_base_url": "http://localhost:11434"  # Auto-adjusted in Docker
+        }
+    }
+}
+
+{
+    "llm": {
+        "provider": "lmstudio",
+        "config": {
+            "model": "llama-3.1-8b-instruct",
+            "lmstudio_base_url": "http://localhost:1234"  # LM Studio - Auto-adjusted in Docker
         }
     }
 }
@@ -99,29 +109,41 @@ def _get_docker_host_url():
     return host_candidates[0]
 
 
-def _fix_ollama_urls(config_section):
+def _fix_localhost_urls(config_section):
     """
-    Fix Ollama URLs for Docker environment.
+    Fix localhost URLs for Docker environment (such as Ollama and LM Studio).
     Replaces localhost URLs with appropriate Docker host URLs.
-    Sets default ollama_base_url if not provided.
+    Sets default URLs if not provided.
     """
     if not config_section or "config" not in config_section:
         return config_section
 
-    ollama_config = config_section["config"]
+    config = config_section["config"]
+    provider = config_section.get("provider", "")
 
-    # Set default ollama_base_url if not provided
-    if "ollama_base_url" not in ollama_config:
-        ollama_config["ollama_base_url"] = "http://host.docker.internal:11434"
-    else:
-        # Check for ollama_base_url and fix if it's localhost
-        url = ollama_config["ollama_base_url"]
-        if "localhost" in url or "127.0.0.1" in url:
+    # NOTE: There is code smell here. `ollama_base_url` | env.OLLAMA_HOST should be initialized EARLIER in the process.
+    #       To honor the original logic, this default code was left in.
+    # Old method (in part) -
+    # Handle Ollama URLs
+    if provider == "ollama":
+        if "ollama_base_url" not in config:
             docker_host = _get_docker_host_url()
-            if docker_host != "localhost":
-                new_url = url.replace("localhost", docker_host).replace("127.0.0.1", docker_host)
-                ollama_config["ollama_base_url"] = new_url
-                print(f"Adjusted Ollama URL from {url} to {new_url}")
+            config["ollama_base_url"] = f"http://{docker_host}:11434"
+
+    # New method. Handle other localhost URLs (LM Studio, OpenAI-compatible APIs, etc.)
+    url_keys = [
+        "base_url", "api_base", "lmstudio_base_url", "openai_base_url",
+        "huggingface_base_url", "openrouter_base_url", "ollama_base_url"
+    ]
+    for url_key in url_keys:
+        if url_key in config:
+            url = config[url_key]
+            if url and ("localhost" in url or "127.0.0.1" in url):
+                docker_host = _get_docker_host_url()
+                if docker_host != "localhost":
+                    new_url = url.replace("localhost", docker_host).replace("127.0.0.1", docker_host)
+                    config[url_key] = new_url
+                    print(f"Adjusted {url_key} from {url} to {new_url}")
 
     return config_section
 
@@ -352,17 +374,15 @@ def get_memory_client(custom_instructions: str = None):
                     if "llm" in mem0_config and mem0_config["llm"] is not None:
                         config["llm"] = mem0_config["llm"]
 
-                        # Fix Ollama URLs for Docker if needed
-                        if config["llm"].get("provider") == "ollama":
-                            config["llm"] = _fix_ollama_urls(config["llm"])
+                        # Fix localhost URLs for Docker if needed
+                        config["llm"] = _fix_localhost_urls(config["llm"])
 
                     # Update Embedder configuration if available
                     if "embedder" in mem0_config and mem0_config["embedder"] is not None:
                         config["embedder"] = mem0_config["embedder"]
 
-                        # Fix Ollama URLs for Docker if needed
-                        if config["embedder"].get("provider") == "ollama":
-                            config["embedder"] = _fix_ollama_urls(config["embedder"])
+                        # Fix localhost URLs for Docker if needed
+                        config["embedder"] = _fix_localhost_urls(config["embedder"])
 
                     if "vector_store" in mem0_config and mem0_config["vector_store"] is not None:
                         config["vector_store"] = mem0_config["vector_store"]
