@@ -332,7 +332,24 @@ class Memory(MemoryBase):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
-            response_format={"type": "json_object"},
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "fact_extraction",
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "facts": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "required": ["facts"]
+                    }
+                }
+            },
         )
 
         try:
@@ -382,7 +399,40 @@ class Memory(MemoryBase):
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_prompt},
                     ],
-                    response_format={"type": "json_object"},
+                    response_format={
+                        "type": "json_schema",
+                        "json_schema": {
+                            "name": "memory_update",
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "memory": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "string"
+                                                },
+                                                "text": {
+                                                    "type": "string"
+                                                },
+                                                "event": {
+                                                    "type": "string",
+                                                    "enum": ["ADD", "UPDATE", "DELETE", "NONE"]
+                                                },
+                                                "old_memory": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": ["id", "text", "event"]
+                                        }
+                                    }
+                                },
+                                "required": ["memory"]
+                            }
+                        }
+                    },
                 )
             except Exception as e:
                 logger.error(f"Error in new memory actions response: {e}")

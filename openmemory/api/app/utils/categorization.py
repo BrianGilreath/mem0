@@ -6,6 +6,7 @@ from app.utils.prompts import MEMORY_CATEGORIZATION_PROMPT
 from pydantic import BaseModel
 from tenacity import retry, stop_after_attempt, wait_exponential
 
+
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=15))
 def get_categories_for_memory(memory: str) -> List[str]:
     try:
@@ -22,7 +23,24 @@ def get_categories_for_memory(memory: str) -> List[str]:
         # Use the LLM's generate_response method
         response = client.llm.generate_response(
             messages=messages,
-            response_format={"type": "json_object"},
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "memory_categorization",
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "categories": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "required": ["categories"]
+                    }
+                }
+            },
             temperature=0
         )
 
