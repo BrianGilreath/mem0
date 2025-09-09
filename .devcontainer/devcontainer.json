@@ -24,15 +24,18 @@
       "label": "OpenMemory UI",
       "onAutoForward": "openPreview"
     },
+    "6333": {
+      "label": "qdrant"
+    },
     "8765": {
-      "label": "OpenMemory MCP API",
+      "label": "OpenMemory API",
       "onAutoForward": "notify"
     }
   },
   // Use 'postCreateCommand' to run commands after the container is created.
   //  "postCreateCommand": "cd mem0 && pip install --user -r openmemory/api/requirements.txt && cd openmemory/ui && pnpm install"
   //  "postCreateCommand": "pip3 install --user -r requirements.txt",
-  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y socat && nohup socat TCP-LISTEN:1234,reuseaddr,fork TCP:10.0.1.24:1234",
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y socat",
 
   // Configure tool-specific properties.
   "customizations": {
