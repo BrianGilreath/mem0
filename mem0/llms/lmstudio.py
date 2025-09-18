@@ -99,10 +99,10 @@ class LMStudioLLM(LLMBase):
             }
         )
 
-        if self.config.lmstudio_response_format:
-            params["response_format"] = self.config.lmstudio_response_format
-        elif response_format:
+        if response_format:
             params["response_format"] = response_format
+        elif self.config.lmstudio_response_format:
+            params["response_format"] = self.config.lmstudio_response_format
         else:
             params["response_format"] = {"type": "json_object"}
 

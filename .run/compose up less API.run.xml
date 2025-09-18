@@ -19,7 +19,6 @@
           <list>
             <option value="mem0_store" />
             <option value="openmemory-ui" />
-            <option value="mem_graph" />
           </list>
         </option>
         <option name="sourceFilePath" value="openmemory/docker-compose.yml" />
